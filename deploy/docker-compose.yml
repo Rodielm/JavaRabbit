@@ -1,0 +1,62 @@
+version: "3"
+services:
+  rabbitmq-broker:
+    image: "rabbitmq:3.8.0-management-alpine"
+    container_name: rabbitmq-broker
+    ports:
+      - "9000:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=twcam-pls
+      - RABBITMQ_DEFAULT_PASS=twcam-pls
+      - RABBITMQ_DEFAULT_VHOST=Imagenes
+
+  web-server:
+    image: "adoptopenjdk/openjdk8-openj9:jre8u232-b09_openj9-0.17.0-debian"
+    container_name: web-server
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data/subidas:/var/web/resources/subidas
+      - ./data/procesadas:/var/web/resources/procesadas
+      - ./web-server/dynamic:/var/web/dynamic
+      - ./web-server/config:/var/web/config
+      - ./web-server/server:/var/web/server
+    working_dir: /var/web/server
+    command: "java -jar dynamic-server-1.0.jar"
+    depends_on:
+      - rabbitmq-broker
+
+  stats:
+    image: "adoptopenjdk/openjdk8-openj9:jre8u232-b09_openj9-0.17.0-debian"
+    container_name: stats
+    volumes:
+      - ./stats/stats-app-1.0.jar:/home/app/stats-app-1.0.jar
+      - ./data:/data
+    working_dir: /home/app
+    command: "java -jar stats-app-1.0.jar"
+    depends_on:
+      - rabbitmq-broker
+
+  worker1:
+    image: "twcammaster.uv.es/java8-opencv"
+    container_name: worker1
+    volumes:
+      - ./worker1/worker-opencv-app-1.0.jar:/home/app/worker-opencv-app-1.0.jar
+      - ./data/subidas:/data/subidas
+      - ./data/procesadas:/data/procesadas
+    working_dir: /home/app
+    command: "java -Djava.library.path=/opt/local/lib -classpath worker-opencv-app-1.0.jar Worker worker1"
+    depends_on:
+      - rabbitmq-broker
+
+  worker2:
+    image: "twcammaster.uv.es/java8-opencv"
+    container_name: worker2
+    volumes:
+      - ./worker2/worker-opencv-app-1.0.jar:/home/app/worker-opencv-app-1.0.jar
+      - ./data/subidas:/data/subidas
+      - ./data/procesadas:/data/procesadas
+    working_dir: /home/app
+    command: "java -Djava.library.path=/opt/local/lib -classpath worker-opencv-app-1.0.jar Worker worker2"
+    depends_on:
+      - rabbitmq-broker

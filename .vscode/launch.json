@@ -1,0 +1,11 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "CodeLens (Launch) - Worker",
+            "request": "launch",
+            "mainClass": "Worker",
+            "projectName": "worker-opencv-app"
+        }
+    ]
+}
